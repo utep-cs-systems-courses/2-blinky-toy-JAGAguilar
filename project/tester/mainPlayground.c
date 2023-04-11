@@ -24,7 +24,7 @@ void main(void)
   P2IE |= SWITCHES;
   P2OUT |= SWITCHES;
   P2DIR &= ~SWITCHES;
-
+  buzzer_Init();
 
   or_sr(0x18);
 
@@ -55,4 +55,24 @@ __interrupt_vec(PORT2_VECTOR) Port_2(){
     P2IFG &= ~SWITCHES;
     switch_interrupt_handler();
   }
+}
+void
+buzzer_init(){
+  timerAUpmode();
+  P2SEL2 &= ~(BIT6 | BIT7);
+  P2SEL &= ~BIT7;
+  P2SEL |= BIT6;
+  P2DIR = BIT6;
+}
+void
+buzzer_set_period(short cycles)
+{
+  CCR0 = cycles;
+  CCR1 = cycles >>1;
+}
+static 
+void
+__interrupt_vec(WDT_VECTOR) WDT()
+{
+  
 }
