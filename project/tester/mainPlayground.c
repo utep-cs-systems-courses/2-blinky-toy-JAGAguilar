@@ -13,9 +13,23 @@
 #define SW4 BIT3
 #define SWITCHES (SW1|SW2|SW3|SW4)
 
+void buzzer_set_period(short cycles)
+{
+  CCR0 = cycles;
+  CCR1 = cycles>>1;
+}
+
+void buzzer_init(){
+  timerAUpmode();
+  P2SEL2 &= ~(BIT6 | BIT7);
+  P2SEL &= ~BIT7;
+  P2SEL |= BIT6;
+  P2DIR = BIT6;
+}
 
 void main(void)
 {
+  enableWDTInterrupts();
   configureClocks();
   P1DIR |=LEDS;
   P1OUT &= ~LEDS;
@@ -24,12 +38,12 @@ void main(void)
   P2IE |= SWITCHES;
   P2OUT |= SWITCHES;
   P2DIR &= ~SWITCHES;
-  buzzer_Init();
+  buzzer_init();
 
   or_sr(0x18);
 
 }
-
+static int buttonDown =0;
 void
 switch_interrupt_handler()
 {
@@ -38,14 +52,13 @@ switch_interrupt_handler()
   P2IES |= (p1val & SWITCHES);
   P2IES &= (p1val | ~SWITCHES);
 
-
   if(p1val&SW1){
-    P1OUT &=~GLED;
-    P1OUT &= ~RLED;
-  }
-  if(p1val&SW2){
-    P1OUT |= GLED;
     P1OUT |= RLED;
+    buttonDown =0;
+  }
+  else{
+    P1OUT |= GLED;
+    buttonDown =1;
   }
 }
 
@@ -56,23 +69,18 @@ __interrupt_vec(PORT2_VECTOR) Port_2(){
     switch_interrupt_handler();
   }
 }
-void
-buzzer_init(){
-  timerAUpmode();
-  P2SEL2 &= ~(BIT6 | BIT7);
-  P2SEL &= ~BIT7;
-  P2SEL |= BIT6;
-  P2DIR = BIT6;
-}
-void
-buzzer_set_period(short cycles)
-{
-  CCR0 = cycles;
-  CCR1 = cycles >>1;
-}
-static 
+
 void
 __interrupt_vec(WDT_VECTOR) WDT()
 {
-  
+  switch(buttonDown){    
+  case 1:
+    P1OUT |= GLED;
+    P1OUT &= ~RLED;
+    break;
+  default:
+    P1OUT |= RLED;
+    P1OUT &= ~GLED;
+    buzzer_set_period(5000);
+   }
 }
