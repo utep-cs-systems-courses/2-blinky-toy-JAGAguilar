@@ -7,12 +7,12 @@
 #define LEDS (RLED|GLED)
 
 
-#define SW1 BIT0
-#define SW2 BIT1
-#define SW3 BIT2
-#define SW4 BIT3
-#define SW5 BIT4
-#define SWITCHES (SW1|SW2|SW3|SW4|SW5)
+#define SW1 1
+#define SW2 2
+#define SW3 4
+#define SW4 8
+#define SW5 BIT3
+#define SWITCHES 15 
 
 void buzzer_set_period(short cycles)
 {
@@ -30,10 +30,15 @@ void buzzer_init(){
 
 void main(void)
 {
-  enableWDTInterrupts();
+  //enableWDTInterrupts();
   configureClocks();
   P1DIR |=LEDS;
   P1OUT &= ~LEDS;
+
+  P1DIR &= ~SW5;
+  P1OUT |= SW5;
+  P1REN |= SW5;
+  P1IE |= SW5;
   
   P2REN |= SWITCHES;
   P2IE |= SWITCHES;
@@ -44,22 +49,27 @@ void main(void)
   or_sr(0x18);
 
 }
-static int buttonDown =0;
+static int secretButton =0;
 void
 switch_interrupt_handler()
 {
-  char p1val = P2IN;
+  char p2val = P2IN;
+  char p1val = P1IN;
+  P1IES |= (p1val & SW5);
+  P1IES &= (p1val | ~SW5);
+  P2IES |= (p2val & SWITCHES);
+  P2IES &= (p2val | ~SWITCHES);
 
-  P2IES |= (p1val & SWITCHES);
-  P2IES &= (p1val | ~SWITCHES);
-
-  if(p1val&SW1){
+  
+  if (!(p2val & SW1)){
     P1OUT |= RLED;
-    buttonDown =0;
-  }
-  else{
     P1OUT |= GLED;
-    buttonDown =1;
+  }if(!(p2val & SW4)){
+    P1OUT &= ~RLED;
+    buzzer_set_period(1738);
+  }
+  if(!(p1val & SW5)){
+    //secretButton =1;
   }
 }
 
@@ -70,25 +80,39 @@ __interrupt_vec(PORT2_VECTOR) Port_2(){
     switch_interrupt_handler();
   }
 }
-int[] secret = {1273,1350,1607,2145,2272,1517,1201,948};
 
-
+void
+__interrupt_vec(PORT1_VECTOR) Port_1(){
+  if(P1IFG & SW5){
+    P1IFG &= ~SW5;
+    switch_interrupt_handler();
+  }
+}
+static int notes[] = {1273,1350,1607,2145,2272,1517,1201,948};
+static short duration[] = {200};
+static short counter = 0;
+static short state =0;
+static short beat = 0;
 void
 __interrupt_vec(WDT_VECTOR) WDT()
 {
-  if(switches & SW5){
-    int step =0;
-    for(;step<8;step++){
-      set_buzzer_period(secret[step]);
+  if(!(P1IN & SW5)){
+    switch(state){
+    case(0):
+      buzzer_set_period(notes[beat]);
+      beat++;
+      goto defaultState;
+    case(1):
+      buzzer_set_period(notes[beat]);
+      beat++;
+      break;
+    defaultState:
+      counter++;
+      if(counter > duration[beat]){
+	counter =0;
+	state +=1;
+      }
     }
   }
 }
-/*
-attempting to write a new type of state machine
-switch(beat) //the way Im seeing it, 250 interrupts a second is a lot of fucking beats so i wanna 
-see how many beats are made in this. test when get home also we'll see if we made the array right.
-anyways define cases
 
-
-
-*/
