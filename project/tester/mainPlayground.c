@@ -49,7 +49,7 @@ void main(void)
   or_sr(0x18);
 
 }
-static int secretButton =0;
+static short secretButton =0;
 static short correct = 0;
 void
 switch_interrupt_handler()
@@ -81,9 +81,14 @@ switch_interrupt_handler()
     }
   }
   else{
-    P1OUT &= ~RLED;
-    P1OUT |= GLED;
-    buzSet(0);
+    if(secretButton==0){
+      P1OUT &= ~RLED;
+      P1OUT |= GLED;
+      buzSet(0);
+    }
+    if(!(p1val & SW5)){
+      secretButton =1;
+    }
   }
   
 }
@@ -111,4 +116,7 @@ static short beat = 0;
 void
 __interrupt_vec(WDT_VECTOR) WDT()
 {
+  if(secretButton == 1){
+    buzSet(500); 
+  }
 }
