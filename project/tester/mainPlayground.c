@@ -2,8 +2,8 @@
 #include "libTimer.h"
 
 
-#define RLED BIT0
-#define GLED BIT6
+#define GLED BIT0
+#define RLED BIT6
 #define LEDS (RLED|GLED)
 
 
@@ -14,7 +14,7 @@
 #define SW5 BIT3
 #define SWITCHES 15 
 
-void buzzer_set_period(short cycles)
+void buzSet(short cycles)
 {
   CCR0 = cycles;
   CCR1 = cycles>>1;
@@ -30,7 +30,7 @@ void buzzer_init(){
 
 void main(void)
 {
-  //enableWDTInterrupts();
+  enableWDTInterrupts();
   configureClocks();
   P1DIR |=LEDS;
   P1OUT &= ~LEDS;
@@ -50,6 +50,7 @@ void main(void)
 
 }
 static int secretButton =0;
+static short correct = 0;
 void
 switch_interrupt_handler()
 {
@@ -59,18 +60,32 @@ switch_interrupt_handler()
   P1IES &= (p1val | ~SW5);
   P2IES |= (p2val & SWITCHES);
   P2IES &= (p2val | ~SWITCHES);
-
-  
-  if (!(p2val & SW1)){
-    P1OUT |= RLED;
-    P1OUT |= GLED;
-  }if(!(p2val & SW4)){
+  if(correct ==0){
+    buzSet(900);
     P1OUT &= ~RLED;
-    buzzer_set_period(1738);
+    P1OUT &= ~GLED;
+    if(!(p2val & SW1)){
+      correct =1;
+    }
+    if(!(p2val & SW2)){//code kinda breaks here unknown reason
+      P1OUT |= RLED;
+      buzSet(9000);
+    }
+    if(!(p2val & SW3)){
+      P1OUT |= RLED;
+      buzSet(1738);
+    }
+    if(!(p2val & SW4)){
+      P1OUT |= RLED;
+      buzSet(8008);
+    }
   }
-  if(!(p1val & SW5)){
-    //secretButton =1;
+  else{
+    P1OUT &= ~RLED;
+    P1OUT |= GLED;
+    buzSet(0);
   }
+  
 }
 
 void
@@ -89,30 +104,11 @@ __interrupt_vec(PORT1_VECTOR) Port_1(){
   }
 }
 static int notes[] = {1273,1350,1607,2145,2272,1517,1201,948};
-static short duration[] = {200};
+static short duration[] = {200,300};
 static short counter = 0;
 static short state =0;
 static short beat = 0;
 void
 __interrupt_vec(WDT_VECTOR) WDT()
 {
-  if(!(P1IN & SW5)){
-    switch(state){
-    case(0):
-      buzzer_set_period(notes[beat]);
-      beat++;
-      goto defaultState;
-    case(1):
-      buzzer_set_period(notes[beat]);
-      beat++;
-      break;
-    defaultState:
-      counter++;
-      if(counter > duration[beat]){
-	counter =0;
-	state +=1;
-      }
-    }
-  }
 }
-
