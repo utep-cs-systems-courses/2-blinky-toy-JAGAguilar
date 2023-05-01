@@ -1,0 +1,6 @@
+#include <msp430.h>
+#include "libTimer.h"
+#include "buzzer.h"
+#include "switches.h"
+#include "wdtHandler.c"
+#include "p2_interruper_handler.c"

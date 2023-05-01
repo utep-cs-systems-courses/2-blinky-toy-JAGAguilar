@@ -92,10 +92,7 @@ __interrupt_vec(PORT2_VECTOR) Port_2(){
 //    switch_interrupt_handler();
 //  }
 //}
-static int notes[] = {1273,1350,1607,2145,2272,1517,1201,948};
-static short duration[] = {25,25,25,25,25,25,25,125,200};
-static short counter = 0;
-static short beat = 0;
+
 void
 __interrupt_vec(WDT_VECTOR) WDT()
 {

@@ -7,14 +7,22 @@ CFLAGS          = -mmcu=${CPU} -I../h -L/opt/ti/msp430_gcc/include
 CC              = msp430-elf-gcc
 AS              = msp430-elf-as
 
-all: button.elf 
+all: game.elf 
 
 #additional rules for files
-button.elf: ${COMMON_OBJECTS} mainPlayground.o ../lib/libTimer.a
+game.elf: ${COMMON_OBJECTS} main.o switches.o switch_handler.o wdtHandler.o buzzer.o leds.o p2_interrupt_handler.o ../lib/libTimer.a
 	${CC} ${CFLAGS} -o $@ $^
 
-load: button.elf
+load: game.elf
 	msp430loader.sh  $^
+
+main.o: switches.h switch_handler.c wdtHandler.c buzzer.h leds.h p2_interrupt_handler.c
+
+buzzer.o: buzzer.c buzzer.h
+
+switches.o: switches.c switches.h buzzer.h
+
+leds.o: leds.c leds.h
 
 clean: $^
 	rm -f *.o *.elf
