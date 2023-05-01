@@ -1,0 +1,7 @@
+#ifndef wdt_included
+#define wdt_included
+
+extern int notes[];
+extern short duration[];
+extern short counter;
+extern short beat;

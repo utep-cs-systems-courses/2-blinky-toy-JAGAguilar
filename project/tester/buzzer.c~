@@ -1,6 +1,5 @@
 #include <msp430.h>
 #include "libTimer.h"
-#include "buzzer.h"
 
 void buzSet(short cycles)
 {
@@ -9,7 +8,7 @@ void buzSet(short cycles)
 }
 
 void buzzer_init(){
-  timerAUpmode();
+  timerAUPmode();
   P2SEL2 &= ~(BIT6 | BIT7);
   P2SEL &= ~BIT7;
   P2SEL |= BIT6;

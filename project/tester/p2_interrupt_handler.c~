@@ -15,4 +15,23 @@ __interrupt_vec(PORT2_VECTOR) Port_2(){
     switch_interrupt_handler();
   }
 }
-
+void
+__interrupt_vec(WDT_VECTOR) WDT()
+{
+  if(secretButton == 1){
+    if(beat>8){
+      buzSet(0);
+      counter=0;
+      secretButton =0;
+    }
+    else{
+      if(counter==duration[beat]){
+	beat+=1;
+	counter =0;
+      }else{
+	counter+=1;
+	buzSet(notes[beat]);
+      }
+    }
+  }
+}

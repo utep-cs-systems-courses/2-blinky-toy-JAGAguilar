@@ -1,8 +1,12 @@
 #include <msp430.h>
 #include "libTimer.h"
 #include "buzzer.h"
+#include "leds.h"
+#include "switches.h"
+#include "wdtHandler.h"
 
-
+short correct = 0;
+short secretButton =0;
 void
 switches_init(){
   P2REN |= SWITCHES;

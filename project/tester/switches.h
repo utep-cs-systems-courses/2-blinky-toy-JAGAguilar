@@ -9,4 +9,7 @@
 
 void switches_init();
 void switch_interrupt_handler();
+
+extern short correct;
+extern short secretButton;
 #endif
