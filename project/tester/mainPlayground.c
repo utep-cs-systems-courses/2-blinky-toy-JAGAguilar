@@ -11,7 +11,6 @@
 #define SW2 2
 #define SW3 4
 #define SW4 8
-#define SW5 BIT3
 #define SWITCHES 15 
 
 void buzSet(short cycles)
@@ -30,16 +29,10 @@ void buzzer_init(){
 
 void main(void)
 {
-  enableWDTInterrupts();
   configureClocks();
   P1DIR |=LEDS;
   P1OUT &= ~LEDS;
 
-  P1DIR &= ~SW5;
-  P1OUT |= SW5;
-  P1REN |= SW5;
-  P1IE |= SW5;
-  
   P2REN |= SWITCHES;
   P2IE |= SWITCHES;
   P2OUT |= SWITCHES;
@@ -55,9 +48,6 @@ void
 switch_interrupt_handler()
 {
   char p2val = P2IN;
-  char p1val = P1IN;
-  P1IES |= (p1val & SW5);
-  P1IES &= (p1val | ~SW5);
   P2IES |= (p2val & SWITCHES);
   P2IES &= (p2val | ~SWITCHES);
   if(correct ==0){
@@ -67,28 +57,23 @@ switch_interrupt_handler()
     if(!(p2val & SW1)){
       correct =1;
     }
-    if(!(p2val & SW2)){//code kinda breaks here unknown reason
-      P1OUT |= RLED;
-      buzSet(9000);
-    }
     if(!(p2val & SW3)){
       P1OUT |= RLED;
       buzSet(1738);
     }
-    if(!(p2val & SW4)){
+    if(!(p2val & SW2)){
       P1OUT |= RLED;
       buzSet(8008);
     }
+    if(!(p2val & SW4)){
+      secretButton =1;
+      enableWDTInterrupts();
+    }
   }
   else{
-    if(secretButton==0){
-      P1OUT &= ~RLED;
-      P1OUT |= GLED;
-      buzSet(0);
-    }
-    if(!(p1val & SW5)){
-      secretButton =1;
-    }
+    P1OUT |= GLED;
+    P1OUT &= ~RLED;
+    buzSet(0);
   }
   
 }
@@ -101,13 +86,13 @@ __interrupt_vec(PORT2_VECTOR) Port_2(){
   }
 }
 
-void
-__interrupt_vec(PORT1_VECTOR) Port_1(){
-  if(P1IFG & SW5){
-    P1IFG &= ~SW5;
-    switch_interrupt_handler();
-  }
-}
+//void
+//__interrupt_vec(PORT1_VECTOR) Port_1(){
+//  if(P1IFG & SW5){
+//    P1IFG &= ~SW5;
+//    switch_interrupt_handler();
+//  }
+//}
 static int notes[] = {1273,1350,1607,2145,2272,1517,1201,948};
 static short duration[] = {200,300};
 static short counter = 0;
@@ -117,6 +102,15 @@ void
 __interrupt_vec(WDT_VECTOR) WDT()
 {
   if(secretButton == 1){
-    buzSet(500); 
+    if(counter==125){
+      buzSet(beat);
+      counter=0;
+      secretButton =0;
+  }
+    else{
+      beat+=15;
+      counter+=1;
+      buzSet(beat);
+    }
   }
 }
